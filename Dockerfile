@@ -11,13 +11,13 @@ RUN go mod download
 
 COPY . ./
 
-RUN go build -o /app/mochi ./cmd
+RUN go build -o /app/mqtt ./cmd
 
 
 FROM alpine
 
 WORKDIR /
-COPY --from=builder /app/mochi .
+COPY --from=builder /app/mqtt .
 
 # tcp
 EXPOSE 1883
@@ -28,4 +28,4 @@ EXPOSE 1882
 # dashboard
 EXPOSE 8080
 
-ENTRYPOINT [ "/mochi" ]
+ENTRYPOINT [ "/mqtt" ]
