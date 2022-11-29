@@ -20,11 +20,6 @@ func TestNew(t *testing.T) {
 	require.NotNil(t, s)
 }
 
-func TestNewNoOpts(t *testing.T) {
-	s := New(nil)
-	require.NotNil(t, s)
-}
-
 func TestOpen(t *testing.T) {
 	mr, _ := miniredis.Run()
 	opts["addr"] = mr.Addr()

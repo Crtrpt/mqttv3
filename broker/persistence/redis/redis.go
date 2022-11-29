@@ -30,11 +30,15 @@ type Store struct {
 }
 
 func New(opts map[string]any) *Store {
-	opt := &redis.Options{
-		Addr:     opts["addr"].(string),
-		Password: opts["password"].(string), // no password set
-		DB:       int(opts["db"].(int64)),   // use default DB
+	opt := &redis.Options{}
+	if opts != nil {
+		opt = &redis.Options{
+			Addr:     opts["addr"].(string),
+			Password: opts["password"].(string), // no password set
+			DB:       int(opts["db"].(int64)),   // use default DB
+		}
 	}
+
 	// fmt.Printf("连接redis")
 	return &Store{
 		opts: opt,
