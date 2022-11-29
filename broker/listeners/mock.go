@@ -6,8 +6,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/crtrpt/mqtt/server/listeners/auth"
-	"github.com/crtrpt/mqtt/server/system"
+	"github.com/crtrpt/mqtt/broker/listeners/auth"
+	"github.com/crtrpt/mqtt/broker/system"
 )
 
 // MockCloser is a function signature which can be used in testing.

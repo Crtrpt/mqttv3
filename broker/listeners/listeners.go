@@ -5,8 +5,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/crtrpt/mqtt/server/listeners/auth"
-	"github.com/crtrpt/mqtt/server/system"
+	"github.com/crtrpt/mqtt/broker/listeners/auth"
+	"github.com/crtrpt/mqtt/broker/system"
 )
 
 // Config contains configuration values for a listener.

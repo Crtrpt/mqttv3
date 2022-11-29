@@ -6,8 +6,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/crtrpt/mqtt/server/listeners/auth"
-	"github.com/crtrpt/mqtt/server/system"
+	"github.com/crtrpt/mqtt/broker/listeners/auth"
+	"github.com/crtrpt/mqtt/broker/system"
 )
 
 // TCP is a listener for establishing client connections on basic TCP protocol.

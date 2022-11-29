@@ -1,5 +1,5 @@
-// package server provides a MQTT 3.1.1 compliant MQTT server.
-package server
+// package broker provides a MQTT 3.1.1 compliant MQTT broker.
+package broker
 
 import (
 	"errors"
@@ -10,16 +10,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/crtrpt/mqtt/server/events"
-	"github.com/crtrpt/mqtt/server/internal/circ"
-	"github.com/crtrpt/mqtt/server/internal/clients"
-	"github.com/crtrpt/mqtt/server/internal/packets"
-	"github.com/crtrpt/mqtt/server/internal/topics"
-	"github.com/crtrpt/mqtt/server/internal/utils"
-	"github.com/crtrpt/mqtt/server/listeners"
-	"github.com/crtrpt/mqtt/server/listeners/auth"
-	"github.com/crtrpt/mqtt/server/persistence"
-	"github.com/crtrpt/mqtt/server/system"
+	"github.com/crtrpt/mqtt/broker/events"
+	"github.com/crtrpt/mqtt/broker/internal/circ"
+	"github.com/crtrpt/mqtt/broker/internal/clients"
+	"github.com/crtrpt/mqtt/broker/internal/packets"
+	"github.com/crtrpt/mqtt/broker/internal/topics"
+	"github.com/crtrpt/mqtt/broker/internal/utils"
+	"github.com/crtrpt/mqtt/broker/listeners"
+	"github.com/crtrpt/mqtt/broker/listeners/auth"
+	"github.com/crtrpt/mqtt/broker/persistence"
+	"github.com/crtrpt/mqtt/broker/system"
 )
 
 const (

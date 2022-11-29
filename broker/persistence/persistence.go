@@ -3,7 +3,7 @@ package persistence
 import (
 	"errors"
 
-	"github.com/crtrpt/mqtt/server/system"
+	"github.com/crtrpt/mqtt/broker/system"
 )
 
 const (

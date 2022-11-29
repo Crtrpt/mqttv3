@@ -12,12 +12,12 @@ import (
 
 	"github.com/rs/xid"
 
-	"github.com/crtrpt/mqtt/server/events"
-	"github.com/crtrpt/mqtt/server/internal/circ"
-	"github.com/crtrpt/mqtt/server/internal/packets"
-	"github.com/crtrpt/mqtt/server/internal/topics"
-	"github.com/crtrpt/mqtt/server/listeners/auth"
-	"github.com/crtrpt/mqtt/server/system"
+	"github.com/crtrpt/mqtt/broker/events"
+	"github.com/crtrpt/mqtt/broker/internal/circ"
+	"github.com/crtrpt/mqtt/broker/internal/packets"
+	"github.com/crtrpt/mqtt/broker/internal/topics"
+	"github.com/crtrpt/mqtt/broker/listeners/auth"
+	"github.com/crtrpt/mqtt/broker/system"
 )
 
 var (

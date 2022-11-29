@@ -10,10 +10,10 @@ import (
 
 	"github.com/logrusorgru/aurora"
 
-	mqtt "github.com/crtrpt/mqtt/server"
-	"github.com/crtrpt/mqtt/server/events"
-	"github.com/crtrpt/mqtt/server/listeners"
-	"github.com/crtrpt/mqtt/server/listeners/auth"
+	mqtt "github.com/crtrpt/mqtt/broker"
+	"github.com/crtrpt/mqtt/broker/events"
+	"github.com/crtrpt/mqtt/broker/listeners"
+	"github.com/crtrpt/mqtt/broker/listeners/auth"
 )
 
 func main() {

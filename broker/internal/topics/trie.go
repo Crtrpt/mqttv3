@@ -4,7 +4,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/crtrpt/mqtt/server/internal/packets"
+	"github.com/crtrpt/mqtt/broker/internal/packets"
 )
 
 // Subscriptions is a map of subscriptions keyed on client.

@@ -11,10 +11,10 @@ import (
 	"github.com/logrusorgru/aurora"
 	"go.etcd.io/bbolt"
 
-	mqtt "github.com/crtrpt/mqtt/server"
-	"github.com/crtrpt/mqtt/server/listeners"
-	"github.com/crtrpt/mqtt/server/listeners/auth"
-	"github.com/crtrpt/mqtt/server/persistence/bolt"
+	mqtt "github.com/crtrpt/mqtt/broker"
+	"github.com/crtrpt/mqtt/broker/listeners"
+	"github.com/crtrpt/mqtt/broker/listeners/auth"
+	"github.com/crtrpt/mqtt/broker/persistence/bolt"
 )
 
 func main() {

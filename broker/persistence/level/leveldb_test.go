@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 
-	"github.com/crtrpt/mqtt/server/persistence"
-	"github.com/crtrpt/mqtt/server/system"
+	"github.com/crtrpt/mqtt/broker/persistence"
+	"github.com/crtrpt/mqtt/broker/system"
 )
 
 const tmpPath = "./leveldb.data"

@@ -8,7 +8,7 @@ import (
 	"github.com/asdine/storm/v3"
 	"go.etcd.io/bbolt"
 
-	"github.com/crtrpt/mqtt/server/persistence"
+	"github.com/crtrpt/mqtt/broker/persistence"
 )
 
 const (

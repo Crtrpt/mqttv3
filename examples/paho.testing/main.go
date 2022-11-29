@@ -9,8 +9,8 @@ import (
 
 	"github.com/logrusorgru/aurora"
 
-	mqtt "github.com/crtrpt/mqtt/server"
-	"github.com/crtrpt/mqtt/server/listeners"
+	mqtt "github.com/crtrpt/mqtt/broker"
+	"github.com/crtrpt/mqtt/broker/listeners"
 )
 
 func main() {

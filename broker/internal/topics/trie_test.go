@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/crtrpt/mqtt/server/internal/packets"
+	"github.com/crtrpt/mqtt/broker/internal/packets"
 )
 
 func TestNew(t *testing.T) {

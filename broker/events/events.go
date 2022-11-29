@@ -1,7 +1,7 @@
 package events
 
 import (
-	"github.com/crtrpt/mqtt/server/internal/packets"
+	"github.com/crtrpt/mqtt/broker/internal/packets"
 )
 
 // Events provides callback handlers for different event hooks.

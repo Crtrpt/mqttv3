@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/asdine/storm"
-	"github.com/crtrpt/mqtt/server/persistence"
+	"github.com/crtrpt/mqtt/broker/persistence"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 )
