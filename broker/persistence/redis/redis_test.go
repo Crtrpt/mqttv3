@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var opts = map[string]any{"addr": "127.0.0.1:6379", "password": "", "db": int64(0)}
+var opts = map[string]interface{}{"addr": "127.0.0.1:6379", "password": "", "db": int64(0)}
 
 func teardown(s *Store, t *testing.T) {
 	s.Close()

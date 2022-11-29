@@ -5,5 +5,5 @@ package function
 // broker a topic a ->function-> broker b topic b
 
 type Function interface {
-	Handle(input any, state *any) (output any, err error)
+	Handle(input interface{}, state *interface{}) (output interface{}, err error)
 }

@@ -29,7 +29,7 @@ type Store struct {
 	db   *redis.Client
 }
 
-func New(opts map[string]any) *Store {
+func New(opts map[string]interface{}) *Store {
 	opt := &redis.Options{}
 	if opts != nil {
 		opt = &redis.Options{

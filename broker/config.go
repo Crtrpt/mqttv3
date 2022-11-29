@@ -18,7 +18,7 @@ type ServerConfig struct {
 	Stdout      string
 	Stderr      string
 	Broker      map[string]BrokerConfig
-	Persistence map[string]any
+	Persistence map[string]interface{}
 }
 
 type BrokerConfig struct {
