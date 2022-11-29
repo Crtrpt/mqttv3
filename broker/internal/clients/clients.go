@@ -96,34 +96,34 @@ func (cl *Clients) GetByListener(id string) []*Client {
 	return clients
 }
 
-// Client contains information about a client known by the broker.
+// 客户端的状态
 type Client struct {
-	State         State                // the operational state of the client.
-	LWT           LWT                  // the last will and testament for the client.
-	Inflight      *Inflight            // a map of in-flight qos messages.
-	sync.RWMutex                       // mutex
-	Username      []byte               // the username the client authenticated with.
-	AC            auth.Controller      // an auth controller inherited from the listener.
-	Listener      string               // the id of the listener the client is connected to.
-	ID            string               // the client id.
-	conn          net.Conn             // the net.Conn used to establish the connection.
-	R             *circ.Reader         // a reader for reading incoming bytes.
-	W             *circ.Writer         // a writer for writing outgoing bytes.
-	Subscriptions topics.Subscriptions // a map of the subscription filters a client maintains.
-	systemInfo    *system.Info         // pointers to server system info.
-	packetID      uint32               // the current highest packetID.
-	keepalive     uint16               // the number of seconds the connection can wait.
-	CleanSession  bool                 // indicates if the client expects a clean-session.
+	State         State                // 客户端的运行状态.
+	LWT           LWT                  // 遗言.
+	Inflight      *Inflight            // 正在处理的消息.
+	sync.RWMutex                       // 读写锁
+	Username      []byte               // 用户名.
+	AC            auth.Controller      // 授权控制器
+	Listener      string               // websocket 还是 tcp的.
+	ID            string               // 客户端唯一标识.
+	conn          net.Conn             // socket.
+	R             *circ.Reader         // 入流.
+	W             *circ.Writer         // 出流.
+	Subscriptions topics.Subscriptions // 订阅列表.
+	systemInfo    *system.Info         // 服务器信息?
+	packetID      uint32               // 当前最搞的包id.
+	keepalive     uint16               // 连接可以的等待多长事件
+	CleanSession  bool                 // 是否清楚会话
 }
 
-// State tracks the state of the client.
+// 客户端的状态.
 type State struct {
-	started   *sync.WaitGroup // tracks the goroutines which have been started.
-	endedW    *sync.WaitGroup // tracks when the writer has ended.
-	endedR    *sync.WaitGroup // tracks when the reader has ended.
-	Done      uint32          // atomic counter which indicates that the client has closed.
-	endOnce   sync.Once       // only end once.
-	stopCause atomic.Value    // reason for stopping.
+	started   *sync.WaitGroup // 开始.
+	endedW    *sync.WaitGroup // 写完了
+	endedR    *sync.WaitGroup // 读完了
+	Done      uint32          // 判断是否断开连接.
+	endOnce   sync.Once       // 执行一次.
+	stopCause atomic.Value    // 断开原因.
 }
 
 // NewClient returns a new instance of Client.
@@ -170,6 +170,7 @@ func (cl *Client) Identify(lid string, pk packets.Packet, ac auth.Controller) {
 	cl.AC = ac
 
 	cl.ID = pk.ClientIdentifier
+	//如果没有id的话 设置一个唯一的client_id
 	if cl.ID == "" {
 		cl.ID = xid.New().String()
 	}
@@ -179,9 +180,11 @@ func (cl *Client) Identify(lid string, pk packets.Packet, ac auth.Controller) {
 
 	cl.Username = pk.Username
 	cl.CleanSession = pk.CleanSession
+	//保持状态
 	cl.keepalive = pk.Keepalive
 
 	if pk.WillFlag {
+		//设置客户端的遗言
 		cl.LWT = LWT{
 			Topic:   pk.WillTopic,
 			Message: pk.WillMessage,
@@ -200,6 +203,7 @@ func (cl *Client) refreshDeadline(keepalive uint16) {
 		if keepalive > 0 {
 			expiry = time.Now().Add(time.Duration(keepalive+(keepalive/2)) * time.Second)
 		}
+		//设置到期时间
 		_ = cl.conn.SetDeadline(expiry)
 	}
 }

@@ -308,16 +308,16 @@ func (s *Server) EstablishConnection(lid string, c net.Conn, ac auth.Controller)
 	//从客户端读取数据
 	pk, err := s.readConnectionPacket(cl)
 	if err != nil {
-		return s.onError(cl.Info(), fmt.Errorf("read connection: %w", err))
+		return s.onError(cl.Info(), fmt.Errorf("读取连接数据包异常: %w", err))
 	}
 
 	//对连接进行验证
 	ackCode, err := pk.ConnectValidate()
 	if err != nil {
 		if err := s.ackConnection(cl, ackCode, false); err != nil {
-			return s.onError(cl.Info(), fmt.Errorf("invalid connection send ack: %w", err))
+			return s.onError(cl.Info(), fmt.Errorf("发送非法连接 数据包: %w", err))
 		}
-		return s.onError(cl.Info(), fmt.Errorf("validate connection packet: %w", err))
+		return s.onError(cl.Info(), fmt.Errorf("验证连接数据包的时候发生了异常: %w", err))
 	}
 
 	//设置客户端的唯一标识符
