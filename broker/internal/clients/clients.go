@@ -316,11 +316,12 @@ func (cl *Client) StopCause() error {
 
 // ReadFixedHeader reads in the values of the next packet's fixed header.
 func (cl *Client) ReadFixedHeader(fh *packets.FixedHeader) error {
+	//读取一个字节的数据
 	p, err := cl.R.Read(1)
 	if err != nil {
 		return err
 	}
-
+	//固定头解码
 	err = fh.Decode(p[0])
 	if err != nil {
 		return err
@@ -329,6 +330,7 @@ func (cl *Client) ReadFixedHeader(fh *packets.FixedHeader) error {
 	// The remaining length value can be up to 5 bytes. Read through each byte
 	// looking for continue values, and if found increase the read. Otherwise
 	// decode the bytes that were legit.
+	// 剩余长度值最多可达 5 个字节。 通读每个字节以查找连续值，如果找到则增加读取。 否则解码合法的字节。
 	buf := make([]byte, 0, 6)
 	i := 1
 	n := 2
@@ -354,10 +356,12 @@ func (cl *Client) ReadFixedHeader(fh *packets.FixedHeader) error {
 
 	// Calculate and store the remaining length of the packet payload.
 	rem, _ := binary.Uvarint(buf)
+	//计算并存储数据包有效载荷的剩余长度
 	fh.Remaining = int(rem)
 
 	// Having successfully read n bytes, commit the tail forward.
 	cl.R.CommitTail(n)
+	//更新接收字节数量
 	atomic.AddInt64(&cl.systemInfo.BytesRecv, int64(n))
 
 	return nil
@@ -370,19 +374,20 @@ func (cl *Client) Read(packetHandler func(*Client, packets.Packet) error) error 
 		if atomic.LoadUint32(&cl.State.Done) == 1 && cl.R.CapDelta() == 0 {
 			return nil
 		}
-
+		//刷新 keepalive的
 		cl.refreshDeadline(cl.keepalive)
+		//读取固定头数据
 		fh := new(packets.FixedHeader)
 		err := cl.ReadFixedHeader(fh)
 		if err != nil {
 			return err
 		}
-
+		//根据固定头数据读取 包数据
 		pk, err := cl.ReadPacket(fh)
 		if err != nil {
 			return err
 		}
-
+		//处理包数据
 		err = packetHandler(cl, pk) // Process inbound packet.
 		if err != nil {
 			return err
@@ -390,7 +395,7 @@ func (cl *Client) Read(packetHandler func(*Client, packets.Packet) error) error 
 	}
 }
 
-// ReadPacket reads the remaining buffer into an MQTT packet.
+// ReadPacket 将剩余的缓冲区读取到 MQTT 数据包中。
 func (cl *Client) ReadPacket(fh *packets.FixedHeader) (pk packets.Packet, err error) {
 	atomic.AddInt64(&cl.systemInfo.MessagesRecv, 1)
 
@@ -399,47 +404,48 @@ func (cl *Client) ReadPacket(fh *packets.FixedHeader) (pk packets.Packet, err er
 		return
 	}
 
+	//读取剩余长度的数据
 	p, err := cl.R.Read(pk.FixedHeader.Remaining)
 	if err != nil {
 		return pk, err
 	}
 	atomic.AddInt64(&cl.systemInfo.BytesRecv, int64(len(p)))
 
-	// Decode the remaining packet values using a fresh copy of the bytes,
-	// otherwise the next packet will change the data of this one.
+	// 创建副本避免被覆盖掉
 	px := append([]byte{}, p[:]...)
 
+	//判断包类型
 	switch pk.FixedHeader.Type {
 	case packets.Connect:
-		err = pk.ConnectDecode(px)
+		err = pk.ConnectDecode(px) //连接包 client->broker
 	case packets.Connack:
-		err = pk.ConnackDecode(px)
+		err = pk.ConnackDecode(px) //连接回复包 broker->client
 	case packets.Publish:
-		err = pk.PublishDecode(px)
+		err = pk.PublishDecode(px) //发布消息 client->broker
 		if err == nil {
 			atomic.AddInt64(&cl.systemInfo.PublishRecv, 1)
 		}
 	case packets.Puback:
-		err = pk.PubackDecode(px)
+		err = pk.PubackDecode(px) //发布回复包 broker->client
 	case packets.Pubrec:
-		err = pk.PubrecDecode(px)
+		err = pk.PubrecDecode(px) // Server 消息已接收(QoS2第一阶段)
 	case packets.Pubrel:
-		err = pk.PubrelDecode(px)
+		err = pk.PubrelDecode(px) //Server 消息释放(QoS2第二阶段)
 	case packets.Pubcomp:
-		err = pk.PubcompDecode(px)
+		err = pk.PubcompDecode(px) //Server 发布结束(QoS2第三阶段)
 	case packets.Subscribe:
-		err = pk.SubscribeDecode(px)
+		err = pk.SubscribeDecode(px) //订阅包 client->broker
 	case packets.Suback:
-		err = pk.SubackDecode(px)
+		err = pk.SubackDecode(px) //订阅回复包 broker->client
 	case packets.Unsubscribe:
-		err = pk.UnsubscribeDecode(px)
+		err = pk.UnsubscribeDecode(px) //取消订阅包 client->broker
 	case packets.Unsuback:
-		err = pk.UnsubackDecode(px)
-	case packets.Pingreq:
-	case packets.Pingresp:
-	case packets.Disconnect:
-	default:
-		err = fmt.Errorf("no valid packet available; %v", pk.FixedHeader.Type)
+		err = pk.UnsubackDecode(px) //取消订阅确认包 broker->client
+	case packets.Pingreq: //ping包 client->broker
+	case packets.Pingresp: //pong包 broker->client
+	case packets.Disconnect: //断开连接包  client->broker
+	default: //其他的? 未验证的包
+		err = fmt.Errorf("未验证的数据包类型; %v", pk.FixedHeader.Type)
 	}
 
 	cl.R.CommitTail(pk.FixedHeader.Remaining)

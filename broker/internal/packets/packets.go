@@ -7,23 +7,37 @@ import (
 	"strconv"
 )
 
-// All of the valid packet types and their packet identifier.
+// All of the valid packet types and their packet identifier
 const (
-	Reserved    byte = iota
-	Connect          // 1
-	Connack          // 2
-	Publish          // 3
-	Puback           // 4
-	Pubrec           // 5
-	Pubrel           // 6
-	Pubcomp          // 7
-	Subscribe        // 8
-	Suback           // 9
-	Unsubscribe      // 10
-	Unsuback         // 11
-	Pingreq          // 12
-	Pingresp         // 13
-	Disconnect       // 14
+	Reserved byte = iota
+	// CONNECT 1 Client —> Server 客户端连接到服务器
+	Connect // 1
+	//CONNACK 2 Server —> Client 连接确认
+	Connack // 2
+	//PUBLISH 3 Client <–> Server 发布消息
+	Publish // 3
+	//PUBACK 4 Client <–> Server 发不确认
+	Puback // 4
+	//PUBREC 5 Client <–> Server 消息已接收(QoS2第一阶段)
+	Pubrec // 5
+	//PUBREL 6 Client <–> Server 消息释放(QoS2第二阶段)
+	Pubrel // 6
+	//PUBCOMP 7 Client <–> Server 发布结束(QoS2第三阶段)
+	Pubcomp // 7
+	//SUBSCRIBE 8 Client —> Server 客户端订阅请求
+	Subscribe // 8
+	//SUBACK 9 Server —> Client 服务端订阅确认
+	Suback // 9
+	//UNSUBACRIBE 10 Client —> Server 客户端取消订阅
+	Unsubscribe // 10
+	//UNSUBACK 11 Server —> Client 服务端取消订阅确认
+	Unsuback // 11
+	//PINGREQ 12 Client —> Server 客户端发送心跳
+	Pingreq // 12
+	//PINGRESP 13 Server —> Client 服务端回复心跳
+	Pingresp // 13
+	//DISCONNECT 14 Client —> Server 客户端断开连接请求
+	Disconnect // 14
 
 	Accepted                      byte = 0x00
 	Failed                        byte = 0xFF

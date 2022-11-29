@@ -32,28 +32,28 @@ const (
 
 var (
 	// ErrListenerIDExists indicates that a listener with the same id already exists.
-	ErrListenerIDExists = errors.New("listener id already exists")
+	ErrListenerIDExists = errors.New("监听器已经退出")
 
 	// ErrReadConnectInvalid indicates that the connection packet was invalid.
-	ErrReadConnectInvalid = errors.New("connect packet was not valid")
+	ErrReadConnectInvalid = errors.New("connect packet 错误")
 
 	// ErrConnectNotAuthorized indicates that the connection packet had incorrect auth values.
-	ErrConnectNotAuthorized = errors.New("connect packet was not authorized")
+	ErrConnectNotAuthorized = errors.New("授权错误")
 
 	// ErrInvalidTopic indicates that the specified topic was not valid.
 	ErrInvalidTopic = errors.New("cannot publish to $ and $SYS topics")
 
 	// ErrRejectPacket indicates that a packet should be dropped instead of processed.
-	ErrRejectPacket = errors.New("packet rejected")
+	ErrRejectPacket = errors.New("packet 被拒绝")
 
 	// ErrClientDisconnect indicates that a client disconnected from the server.
-	ErrClientDisconnect = errors.New("client disconnected")
+	ErrClientDisconnect = errors.New("客户端断开连接")
 
 	// ErrClientReconnect indicates that a client attempted to reconnect while still connected.
 	ErrClientReconnect = errors.New("client sent connect while connected")
 
 	// ErrServerShutdown is propagated when the server shuts down.
-	ErrServerShutdown = errors.New("server is shutting down")
+	ErrServerShutdown = errors.New("服务器已经下线")
 
 	// ErrSessionReestablished indicates that an existing client was replaced by a newly connected
 	// client. The existing client is disconnected.
@@ -62,36 +62,33 @@ var (
 	// ErrConnectionFailed indicates that a client connection attempt failed for other reasons.
 	ErrConnectionFailed = errors.New("connection attempt failed")
 
-	// SysTopicInterval is the number of milliseconds between $SYS topic publishes.
+	// 定时发送$Sys 间隔
 	SysTopicInterval time.Duration = 30000
 
-	// inflightResendBackoff is a slice of seconds, which determines the
-	// interval between inflight resend attempts.
+	// 消息重发间隔 最多6小时内重发
 	inflightResendBackoff = []int64{0, 1, 2, 10, 60, 120, 600, 3600, 21600}
 
-	// inflightMaxResends is the maximum number of times to try resending QoS promises.
+	// QoS 重发时间
 	inflightMaxResends = 6
 )
 
-// Server is an MQTT broker server. It should be created with server.New()
-// in order to ensure all the internal fields are correctly populated.
+// 使用 server.New() 初始化 broker
 type Server struct {
-	inline               inlineMessages       // channels for direct publishing.
-	Events               events.Events        // overrideable event hooks.
-	Store                persistence.Store    // a persistent storage backend if desired.
-	Options              *Options             // configurable server options.
-	Listeners            *listeners.Listeners // listeners are network interfaces which listen for new connections.
-	Clients              *clients.Clients     // clients which are known to the broker.
-	Topics               *topics.Index        // an index of topic filter subscriptions and retained messages.
-	System               *system.Info         // values about the server commonly found in $SYS topics.
-	bytepool             *circ.BytesPool      // a byte pool for incoming and outgoing packets.
-	sysTicker            *time.Ticker         // the interval ticker for sending updating $SYS topics.
-	inflightExpiryTicker *time.Ticker         // the interval ticker for cleaning up expired messages.
-	inflightResendTicker *time.Ticker         // the interval ticker for resending unresolved inflight messages.
-	done                 chan bool            // indicate that the server is ending.
+	inline               inlineMessages       // 内部消息 服务器直接发给 client的消息
+	Events               events.Events        // 事件回调列表
+	Store                persistence.Store    // 持久化后端.
+	Options              *Options             // 服务器配置信息.
+	Listeners            *listeners.Listeners // tcp服务监听器.
+	Clients              *clients.Clients     // 当前broker下面的全部client
+	Topics               *topics.Index        // topic树
+	System               *system.Info         // 系统的信息 $SYS 内容.
+	bytepool             *circ.BytesPool      // 字节池
+	sysTicker            *time.Ticker         // 定时更新 $SYS .
+	inflightExpiryTicker *time.Ticker         // 定时删除过期消息.
+	inflightResendTicker *time.Ticker         // 消息定时重发.
+	done                 chan bool            // broker是否下线.
 }
 
-// Options contains configurable options for the server.
 type Options struct {
 	// BufferSize overrides the default buffer size (circ.DefaultBufferSize) for the client buffers.
 	BufferSize int
@@ -153,8 +150,8 @@ func NewServer(opts *Options) *Server {
 	return s
 }
 
-// AddStore assigns a persistent storage backend to the server. This must be
-// called before calling server.Server().
+// 设置持久化后端
+// 必须在启动server之前调用.
 func (s *Server) AddStore(p persistence.Store) error {
 	s.Store = p
 	s.Store.SetInflightTTL(s.Options.InflightTTL)
@@ -167,7 +164,7 @@ func (s *Server) AddStore(p persistence.Store) error {
 	return nil
 }
 
-// AddListener adds a new network listener to the server.
+// 开启多个网络监听器
 func (s *Server) AddListener(listener listeners.Listener, config *listeners.Config) error {
 	if _, ok := s.Listeners.Get(listener.ID()); ok {
 		return ErrListenerIDExists
@@ -186,7 +183,7 @@ func (s *Server) AddListener(listener listeners.Listener, config *listeners.Conf
 	return nil
 }
 
-// Serve starts the event loops responsible for establishing client connections
+// 开始事件调度
 // on all attached listeners, and publishing the system topics.
 func (s *Server) Serve() error {
 	if s.Store != nil {
@@ -195,8 +192,9 @@ func (s *Server) Serve() error {
 			return err
 		}
 	}
+	//开启事件循环
+	go s.eventLoop() // spin up event loop for issuing $SYS values and closing server.
 
-	go s.eventLoop()                            // spin up event loop for issuing $SYS values and closing server.
 	go s.inlineClient()                         // spin up inline client for direct message publishing.
 	s.Listeners.ServeAll(s.EstablishConnection) // start listening on all listeners.
 	s.publishSysTopics()                        // begin publishing $SYS system values.
@@ -204,7 +202,7 @@ func (s *Server) Serve() error {
 	return nil
 }
 
-// eventLoop loops forever, running various server processes at different intervals.
+// 开启时间调度, running various server processes at different intervals.
 func (s *Server) eventLoop() {
 	for {
 		select {
@@ -212,8 +210,10 @@ func (s *Server) eventLoop() {
 			s.sysTicker.Stop()
 			close(s.inline.done)
 			return
+		//定时发布系统状态
 		case <-s.sysTicker.C:
 			s.publishSysTopics()
+		//删除过期消息
 		case <-s.inflightExpiryTicker.C:
 			s.clearExpiredInflights(time.Now().Unix())
 		case <-s.inflightResendTicker.C:
@@ -236,8 +236,7 @@ func (s *Server) inlineClient() {
 	}
 }
 
-// readConnectionPacket reads the first incoming header for a connection, and if
-// acceptable, returns the valid connection packet.
+// 读取连接的第一个传入标头，如果可接受，则返回有效的连接数据包。
 func (s *Server) readConnectionPacket(cl *clients.Client) (pk packets.Packet, err error) {
 	fh := new(packets.FixedHeader)
 	err = cl.ReadFixedHeader(fh)
@@ -250,6 +249,7 @@ func (s *Server) readConnectionPacket(cl *clients.Client) (pk packets.Packet, er
 		return
 	}
 
+	//如果类型错误 返回连接
 	if pk.FixedHeader.Type != packets.Connect {
 		return pk, ErrReadConnectInvalid
 	}
@@ -286,14 +286,15 @@ func (s *Server) onStorage(cl events.Clientlike, err error) {
 	_ = s.onError(cl.Info(), fmt.Errorf("storage: %w", err))
 }
 
-// EstablishConnection establishes a new client when a listener
-// accepts a new connection.
+// 处理每一个新的客户端连接
 func (s *Server) EstablishConnection(lid string, c net.Conn, ac auth.Controller) error {
-	xbr := s.bytepool.Get() // Get byte buffer from pools for receiving packet data.
-	xbw := s.bytepool.Get() // and for sending.
+
+	xbr := s.bytepool.Get() // 从连接池获取一个接收的
+	xbw := s.bytepool.Get() // 从连接池获取一个发送的
 	defer s.bytepool.Put(xbr)
 	defer s.bytepool.Put(xbw)
 
+	//创建一个客户端映射
 	cl := clients.NewClient(c,
 		circ.NewReaderFromSlice(s.Options.BufferBlockSize, xbr),
 		circ.NewWriterFromSlice(s.Options.BufferBlockSize, xbw),
@@ -304,11 +305,13 @@ func (s *Server) EstablishConnection(lid string, c net.Conn, ac auth.Controller)
 	defer cl.ClearBuffers()
 	defer cl.Stop(nil)
 
+	//从客户端读取数据
 	pk, err := s.readConnectionPacket(cl)
 	if err != nil {
 		return s.onError(cl.Info(), fmt.Errorf("read connection: %w", err))
 	}
 
+	//对连接进行验证
 	ackCode, err := pk.ConnectValidate()
 	if err != nil {
 		if err := s.ackConnection(cl, ackCode, false); err != nil {
@@ -317,29 +320,39 @@ func (s *Server) EstablishConnection(lid string, c net.Conn, ac auth.Controller)
 		return s.onError(cl.Info(), fmt.Errorf("validate connection packet: %w", err))
 	}
 
+	//设置客户端的唯一标识符
 	cl.Identify(lid, pk, ac) // Set client identity values from the connection packet.
 
+	//开始用户名密码认证
 	if !ac.Authenticate(pk.Username, pk.Password) {
+		//返回授权认证错误给客户端
 		if err := s.ackConnection(cl, packets.CodeConnectBadAuthValues, false); err != nil {
 			return s.onError(cl.Info(), fmt.Errorf("invalid connection send ack: %w", err))
 		}
 		return s.onError(cl.Info(), ErrConnectionFailed)
 	}
-
+	//连接总数+1
 	atomic.AddInt64(&s.System.ConnectionsTotal, 1)
+	//客户端总数+1;
 	atomic.AddInt64(&s.System.ClientsConnected, 1)
+	//断开连接后 客户端总数-1
 	defer atomic.AddInt64(&s.System.ClientsConnected, -1)
+	//断开连接后 断开连接数+1
 	defer atomic.AddInt64(&s.System.ClientsDisconnected, 1)
 
+	//授权完成之后 获取 client session
 	sessionPresent := s.inheritClientSession(pk, cl)
+	//broker 客户端+1
 	s.Clients.Add(cl)
-
+	//给 client返回 ack
 	err = s.ackConnection(cl, ackCode, sessionPresent)
+
 	if err != nil {
 		return s.onError(cl.Info(), fmt.Errorf("ack connection packet: %w", err))
 	}
 
 	if sessionPresent {
+		// 重新发送正在处理的消息
 		err = s.ResendClientInflight(cl, true)
 		if err != nil {
 			s.onError(cl.Info(), fmt.Errorf("resend in flight: %w", err)) // pass-through, no return.
@@ -347,6 +360,7 @@ func (s *Server) EstablishConnection(lid string, c net.Conn, ac auth.Controller)
 	}
 
 	if s.Store != nil {
+		//持久化 client信息
 		s.onStorage(cl, s.Store.WriteClient(persistence.Client{
 			ID:       "cl_" + cl.ID,
 			ClientID: cl.ID,
@@ -357,21 +371,27 @@ func (s *Server) EstablishConnection(lid string, c net.Conn, ac auth.Controller)
 		}))
 	}
 
+	//触发 connect 事件
 	if s.Events.OnConnect != nil {
 		s.Events.OnConnect(cl.Info(), events.Packet(pk))
 	}
-
+	// 现在连接状态已经变成正常状态了
+	//处理消息---
 	if err := cl.Read(s.processPacket); err != nil {
+		//如果发生了错误 发送遗言 并且断开客户端连接
 		s.sendLWT(cl)
 		cl.Stop(err)
 	}
 
+	//获取断开原因
 	err = cl.StopCause() // Determine true cause of stop.
 
+	//如果清楚连接状态的话执行相应的逻辑
 	if cl.CleanSession {
 		s.clearAbandonedInflights(cl)
 	}
 
+	//触发断开连接逻辑
 	if s.Events.OnDisconnect != nil {
 		s.Events.OnDisconnect(cl.Info(), err)
 	}
@@ -390,32 +410,37 @@ func (s *Server) ackConnection(cl *clients.Client, ack byte, present bool) error
 	})
 }
 
-// inheritClientSession inherits the state of an existing client sharing the same
-// connection ID. If cleanSession is true, the state of any previously existing client
-// session is abandoned.
+// 如果当前的 cleanSession 为true 复用以前的 下一个client 也会复用当前的
+// cleanSession 为 true 复用以前的 否则 不复用以前的
 func (s *Server) inheritClientSession(pk packets.Packet, cl *clients.Client) bool {
 	if existing, ok := s.Clients.Get(pk.ClientIdentifier); ok {
 		existing.Lock()
 		defer existing.Unlock()
-
+		//如果client相同 停止老的客户端
 		existing.Stop(ErrSessionReestablished) // Issue a stop on the old client.
 
 		// Per [MQTT-3.1.2-6]:
 		// If CleanSession is set to 1, the Client and Server MUST discard any previous Session and start a new one.
 		// The state associated with a CleanSession MUST NOT be reused in any subsequent session.
+		// 如果当前不复用 或者 老的client 不复用的话
 		if pk.CleanSession || existing.CleanSession {
+			//退订全部订阅
 			s.unsubscribeClient(existing)
+			//清楚未完成的消息
 			s.clearAbandonedInflights(existing)
 			return false
 		}
-
+		//否则不清楚老的订阅和消息继续处理
 		cl.Inflight = existing.Inflight // Take address of existing session.
 		cl.Subscriptions = existing.Subscriptions
 		return true
 
 	} else {
+		//全新的客户端 增加总客户端数量
 		atomic.AddInt64(&s.System.ClientsTotal, 1)
+		//如果系统客户端连接数>系统客户端最大连接数量
 		if atomic.LoadInt64(&s.System.ClientsConnected) > atomic.LoadInt64(&s.System.ClientsMax) {
+			//系统客户端最大连接数+1
 			atomic.AddInt64(&s.System.ClientsMax, 1)
 		}
 		return false

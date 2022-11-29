@@ -1,24 +1,24 @@
 package system
 
-// Info contains atomic counters and values for various server statistics
-// commonly found in $SYS topics.
+// 服务器的当前统计信息
+// 通常发送到 $SYS 主题
 type Info struct {
-	Version             string `json:"version"`              // the current version of the server.
-	Started             int64  `json:"started"`              // the time the server started in unix seconds.
-	Uptime              int64  `json:"uptime"`               // the number of seconds the server has been online.
-	BytesRecv           int64  `json:"bytes_recv"`           // the total number of bytes received in all packets.
-	BytesSent           int64  `json:"bytes_sent"`           // the total number of bytes sent to clients.
-	ClientsConnected    int64  `json:"clients_connected"`    // the number of currently connected clients.
-	ClientsDisconnected int64  `json:"clients_disconnected"` // the number of disconnected non-cleansession clients.
-	ClientsMax          int64  `json:"clients_max"`          // the maximum number of clients that have been concurrently connected.
-	ClientsTotal        int64  `json:"clients_total"`        // the sum of all clients, connected and disconnected.
-	ConnectionsTotal    int64  `json:"connections_total"`    // the sum number of clients which have ever connected.
-	MessagesRecv        int64  `json:"messages_recv"`        // the total number of packets received.
-	MessagesSent        int64  `json:"messages_sent"`        // the total number of packets sent.
-	PublishDropped      int64  `json:"publish_dropped"`      // the number of in-flight publish messages which were dropped.
-	PublishRecv         int64  `json:"publish_recv"`         // the total number of received publish packets.
-	PublishSent         int64  `json:"publish_sent"`         // the total number of sent publish packets.
-	Retained            int64  `json:"retained"`             // the number of messages currently retained.
-	Inflight            int64  `json:"inflight"`             // the number of messages currently in-flight.
-	Subscriptions       int64  `json:"subscriptions"`        // the total number of filter subscriptions.
+	Version             string `json:"version"`              // 当前服务器的版本
+	Started             int64  `json:"started"`              // 启动时间.
+	Uptime              int64  `json:"uptime"`               // 在线时长.
+	BytesRecv           int64  `json:"bytes_recv"`           // 总共接收到多少包.
+	BytesSent           int64  `json:"bytes_sent"`           // 发送了多少包.
+	ClientsConnected    int64  `json:"clients_connected"`    // 当前客户端连接数
+	ClientsDisconnected int64  `json:"clients_disconnected"` // 断开客户端总数.
+	ClientsMax          int64  `json:"clients_max"`          // 客户端最大并发数.
+	ClientsTotal        int64  `json:"clients_total"`        // 连接数+断开连接的数量
+	ConnectionsTotal    int64  `json:"connections_total"`    // 已经连接的客户端数量
+	MessagesRecv        int64  `json:"messages_recv"`        // 收到多少条消息.
+	MessagesSent        int64  `json:"messages_sent"`        // 发送多少条消息.
+	PublishDropped      int64  `json:"publish_dropped"`      // 丢弃多少条消息.
+	PublishRecv         int64  `json:"publish_recv"`         // 发布了多少条消息.
+	PublishSent         int64  `json:"publish_sent"`         // 发布的消息多少条被接收了.
+	Retained            int64  `json:"retained"`             // 当前保留了多少条消息.
+	Inflight            int64  `json:"inflight"`             // 多少条消息正在处理.
+	Subscriptions       int64  `json:"subscriptions"`        // 过滤的订阅总数.
 }
