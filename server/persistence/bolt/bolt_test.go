@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/bbolt"
 
-	"github.com/mochi-co/mqtt/server/persistence"
-	"github.com/mochi-co/mqtt/server/system"
+	"github.com/crtrpt/mqtt/server/persistence"
+	"github.com/crtrpt/mqtt/server/system"
 )
 
 const tmpPath = "testbolt.db"
