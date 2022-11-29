@@ -399,7 +399,7 @@ func (s *Server) EstablishConnection(lid string, c net.Conn, ac auth.Controller)
 	return err
 }
 
-// ackConnection returns a Connack packet to a client.
+// 发送 connack数据包
 func (s *Server) ackConnection(cl *clients.Client, ack byte, present bool) error {
 	return s.writeClient(cl, packets.Packet{
 		FixedHeader: packets.FixedHeader{
