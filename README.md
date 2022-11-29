@@ -1,3 +1,6 @@
+原始版本基于
+
+https://github.com/mochi-co/mqtt
 
 <p align="center">
 
