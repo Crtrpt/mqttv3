@@ -18,7 +18,7 @@ var (
 
 const (
 	KSubscription = "mqtt:" + persistence.KSubscription
-	KbrokerInfo   = "mqtt:" + persistence.KbrokerInfo
+	KServerInfo   = "mqtt:" + persistence.KServerInfo
 	KRetained     = "mqtt:" + persistence.KRetained
 	KInflight     = "mqtt:" + persistence.KInflight
 	KClient       = "mqtt:" + persistence.KClient
@@ -29,15 +29,15 @@ type Store struct {
 	db   *redis.Client
 }
 
-func New(opts *redis.Options) *Store {
-	if opts == nil {
-		opts = &redis.Options{
-			Password: "", // no password set
-			DB:       0,  // use default DB
-		}
+func New(opts map[string]any) *Store {
+	opt := &redis.Options{
+		Addr:     opts["addr"].(string),
+		Password: opts["password"].(string), // no password set
+		DB:       int(opts["db"].(int64)),   // use default DB
 	}
+	// fmt.Printf("连接redis")
 	return &Store{
-		opts: opts,
+		opts: opt,
 	}
 }
 
@@ -61,12 +61,12 @@ func (s *Store) HSet(key string, id string, v interface{}) error {
 }
 
 // WritebrokerInfo writes the broker info to the redis instance.
-func (s *Store) WritebrokerInfo(v persistence.brokerInfo) error {
+func (s *Store) WriteServerInfo(v persistence.ServerInfo) error {
 	if v.ID == "" || v.Info == (system.Info{}) {
 		return ErrEmptyStruct
 	}
 	val, _ := json.Marshal(v)
-	return s.db.Set(context.Background(), KbrokerInfo, val, 0).Err()
+	return s.db.Set(context.Background(), KServerInfo, val, 0).Err()
 }
 
 // WriteSubscription writes a single subscription to the redis instance.
@@ -224,13 +224,21 @@ func (s *Store) ReadRetained() (v []persistence.Message, err error) {
 	return v, nil
 }
 
+func (s *Store) SetInflightTTL(seconds int64) {
+
+}
+
+func (s *Store) ClearExpiredInflight(expiry int64) error {
+	return nil
+}
+
 // ReadbrokerInfo loads the broker info from the redis instance.
-func (s *Store) ReadbrokerInfo() (v persistence.brokerInfo, err error) {
+func (s *Store) ReadServerInfo() (v persistence.ServerInfo, err error) {
 	if s.db == nil {
 		return v, ErrNotConnected
 	}
 
-	res, err := s.db.Get(context.Background(), KbrokerInfo).Result()
+	res, err := s.db.Get(context.Background(), KServerInfo).Result()
 	if err != nil && err != redis.Nil {
 		return
 	}

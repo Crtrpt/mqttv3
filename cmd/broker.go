@@ -11,6 +11,7 @@ import (
 
 	mqtt "github.com/crtrpt/mqtt/broker"
 	"github.com/crtrpt/mqtt/broker/listeners"
+	"github.com/crtrpt/mqtt/broker/persistence/redis"
 )
 
 func main() {
@@ -32,6 +33,13 @@ func main() {
 
 	fmt.Println(aurora.Magenta("启动 MQTT Broker"))
 	server := mqtt.NewServer(nil)
+	// fmt.Printf("%v", config)
+	if config.Persistence != nil {
+		if config.Persistence["name"] == "redis" {
+			server.AddStore(redis.New(config.Persistence))
+		}
+	}
+
 	for _, broker := range config.Broker {
 		if broker.Protocol == "tcp" {
 			tcp := listeners.NewTCP(broker.Name, broker.Addr)

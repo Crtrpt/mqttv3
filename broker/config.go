@@ -15,9 +15,10 @@ func InitConfig(f string, config *ServerConfig) {
 }
 
 type ServerConfig struct {
-	Stdout string
-	Stderr string
-	Broker map[string]BrokerConfig
+	Stdout      string
+	Stderr      string
+	Broker      map[string]BrokerConfig
+	Persistence map[string]any
 }
 
 type BrokerConfig struct {

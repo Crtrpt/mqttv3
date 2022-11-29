@@ -16,3 +16,10 @@ enable=true
 addr="127.0.0.1:1884"
 stderr="./log/websocket_stderr.log"
 stdout="./log/websocket_stdout.log"
+
+[persistence]
+name="redis"
+addr="localhost:6379"
+password=""
+db=0
+
