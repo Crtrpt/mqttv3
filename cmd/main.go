@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,10 +14,13 @@ import (
 )
 
 func main() {
-	tcpAddr := flag.String("tcp", ":1883", "network address for TCP listener")
-	wsAddr := flag.String("ws", ":1882", "network address for Websocket listener")
-	infoAddr := flag.String("info", ":8080", "network address for web info dashboard listener")
+
+	config := mqtt.ServerConfig{}
+	configFile := flag.String("f", "./mqtt.toml", "mqtt 配置文件路径 默认mqtt.toml")
 	flag.Parse()
+	if *configFile != "" {
+		mqtt.InitConfig(*configFile, &config)
+	}
 
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
@@ -28,37 +30,33 @@ func main() {
 		done <- true
 	}()
 
-	fmt.Println(aurora.Magenta("Mochi MQTT Broker initializing..."))
-	fmt.Println(aurora.Cyan("TCP"), *tcpAddr)
-	fmt.Println(aurora.Cyan("Websocket"), *wsAddr)
-	fmt.Println(aurora.Cyan("$SYS Dashboard"), *infoAddr)
-
+	fmt.Println(aurora.Magenta("启动 MQTT Broker"))
 	server := mqtt.NewServer(nil)
-	tcp := listeners.NewTCP("t1", *tcpAddr)
-	err := server.AddListener(tcp, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	ws := listeners.NewWebsocket("ws1", *wsAddr)
-	err = server.AddListener(ws, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stats := listeners.NewHTTPStats("stats", *infoAddr)
-	err = server.AddListener(stats, nil)
-	if err != nil {
-		log.Fatal(err)
+	for _, broker := range config.Broker {
+		if broker.Protocol == "tcp" {
+			tcp := listeners.NewTCP(broker.Name, broker.Addr)
+			err := server.AddListener(tcp, nil)
+			if err != nil {
+				mqtt.Logger.Sugar().Errorf("%v", err)
+			} else {
+				mqtt.Logger.Sugar().Infof("监听 tcp %v", broker.Addr)
+			}
+		}
+		if broker.Protocol == "websocket" {
+			ws := listeners.NewWebsocket(broker.Name, broker.Addr)
+			err := server.AddListener(ws, nil)
+			if err != nil {
+				mqtt.Logger.Sugar().Errorf("%v", err)
+			} else {
+				mqtt.Logger.Sugar().Infof("监听 websocket %v", broker.Addr)
+			}
+		}
 	}
 
 	go server.Serve()
-	fmt.Println(aurora.BgMagenta("  Started!  "))
-
+	fmt.Println(aurora.BgMagenta("  启动完成  "))
 	<-done
-	fmt.Println(aurora.BgRed("  Caught Signal  "))
-
+	fmt.Println(aurora.BgRed("  捕捉到信号  "))
 	server.Close()
-	fmt.Println(aurora.BgGreen("  Finished  "))
-
+	fmt.Println(aurora.BgGreen("  完成  "))
 }
