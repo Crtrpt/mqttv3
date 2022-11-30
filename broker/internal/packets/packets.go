@@ -129,23 +129,23 @@ func (pk *Packet) ConnectEncode(buf *bytes.Buffer) error {
 
 	var willTopic, willFlag, usernameFlag, passwordFlag []byte
 
-	// If will flag is set, add topic and message.
+	// 如果设置了遗言 设置遗言消息
 	if pk.WillFlag {
 		willTopic = encodeString(pk.WillTopic)
 		willFlag = encodeBytes(pk.WillMessage)
 	}
 
-	// If username flag is set, add username.
+	// 如果设置了用户名
 	if pk.UsernameFlag {
 		usernameFlag = encodeBytes(pk.Username)
 	}
 
-	// If password flag is set, add password.
+	// 如果设置了password 解码
 	if pk.PasswordFlag {
 		passwordFlag = encodeBytes(pk.Password)
 	}
 
-	// Get a length for the connect header. This is not super pretty, but it works.
+	// 不是很漂亮但是能工作
 	pk.FixedHeader.Remaining =
 		len(protoName) + 1 + 1 + len(keepalive) + len(clientID) +
 			len(willTopic) + len(willFlag) +
@@ -254,22 +254,22 @@ func (pk *Packet) ConnectValidate() (b byte, err error) {
 		return CodeConnectBadProtocolVersion, ErrProtocolViolation
 	}
 
-	// End if reserved bit is not 0.
+	// 保留标志不是0
 	if pk.ReservedBit != 0 {
 		return CodeConnectProtocolViolation, ErrProtocolViolation
 	}
 
-	// End if ClientID is too long.
+	// client id 过长
 	if len(pk.ClientIdentifier) > 65535 {
 		return CodeConnectProtocolViolation, ErrProtocolViolation
 	}
 
-	// End if password flag is set without a username.
+	// 设置了密码标志没有给密码
 	if pk.PasswordFlag && !pk.UsernameFlag {
 		return CodeConnectProtocolViolation, ErrProtocolViolation
 	}
 
-	// End if Username or Password is too long.
+	// 如果用户名或者密码过长
 	if len(pk.Username) > 65535 || len(pk.Password) > 65535 {
 		return CodeConnectProtocolViolation, ErrProtocolViolation
 	}
@@ -315,13 +315,13 @@ func (pk *Packet) DisconnectEncode(buf *bytes.Buffer) error {
 	return nil
 }
 
-// PingreqEncode encodes a Pingreq packet.
+// ping 请求
 func (pk *Packet) PingreqEncode(buf *bytes.Buffer) error {
 	pk.FixedHeader.Encode(buf)
 	return nil
 }
 
-// PingrespEncode encodes a Pingresp packet.
+// pong 回应
 func (pk *Packet) PingrespEncode(buf *bytes.Buffer) error {
 	pk.FixedHeader.Encode(buf)
 	return nil

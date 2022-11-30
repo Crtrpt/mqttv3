@@ -10,38 +10,32 @@ import (
 	"github.com/crtrpt/mqtt/broker/system"
 )
 
-// TCP is a listener for establishing client connections on basic TCP protocol.
-type TCP struct {
+type MQTTv5 struct {
 	sync.RWMutex
 	id       string       // the internal id of the listener.
-	protocol string       // the TCP protocol to use.
+	protocol string       // the MQTTv5 protocol to use.
 	address  string       // the network address to bind to.
 	listen   net.Listener // a net.Listener which will listen for new clients.
 	config   *Config      // configuration values for the listener.
 	end      uint32       // ensure the close methods are only called once.
 }
 
-// NewTCP initialises and returns a new TCP listener, listening on an address.
-func NewTCP(id, address string) *TCP {
-	return &TCP{
+func NewMQTTv5(id, address string) *MQTTv5 {
+	return &MQTTv5{
 		id:       id,
 		protocol: "tcp",
 		address:  address,
-		config: &Config{ // default configuration.
+		config: &Config{
 			Auth: new(auth.Allow),
 			TLS:  new(TLS),
 		},
 	}
 }
 
-// SetConfig sets the configuration values for the listener config.
-func (l *TCP) SetConfig(config *Config) {
+func (l *MQTTv5) SetConfig(config *Config) {
 	l.Lock()
 	if config != nil {
 		l.config = config
-
-		// If a config has been passed without an auth controller,
-		// it may be a mistake, so disallow all traffic.
 		if l.config.Auth == nil {
 			l.config.Auth = new(auth.Disallow)
 		}
@@ -51,20 +45,17 @@ func (l *TCP) SetConfig(config *Config) {
 }
 
 // ID returns the id of the listener.
-func (l *TCP) ID() string {
+func (l *MQTTv5) ID() string {
 	l.RLock()
 	id := l.id
 	l.RUnlock()
 	return id
 }
 
-// Listen starts listening on the listener's network address.
-func (l *TCP) Listen(s *system.Info) error {
+// 监听网络
+func (l *MQTTv5) Listen(s *system.Info) error {
 	var err error
 
-	// The following logic is deprecated in favour of passing through the tls.Config
-	// value directly, however it remains in order to provide backwards compatibility.
-	// It will be removed someday, so use the preferred method (l.config.TLSConfig).
 	if l.config.TLS != nil && len(l.config.TLS.Certificate) > 0 && len(l.config.TLS.PrivateKey) > 0 {
 		var cert tls.Certificate
 		cert, err = tls.X509KeyPair(l.config.TLS.Certificate, l.config.TLS.PrivateKey)
@@ -88,9 +79,8 @@ func (l *TCP) Listen(s *system.Info) error {
 	return nil
 }
 
-// Serve starts waiting for new TCP connections, and calls the establish
-// connection callback for any received.
-func (l *TCP) Serve(establish EstablishFunc) {
+// 等待连接建立
+func (l *MQTTv5) Serve(establish EstablishFunc) {
 	for {
 		if atomic.LoadUint32(&l.end) == 1 {
 			return
@@ -109,8 +99,8 @@ func (l *TCP) Serve(establish EstablishFunc) {
 	}
 }
 
-// Close closes the listener and any client connections.
-func (l *TCP) Close(closeClients CloseFunc) {
+// 关闭服务器和所有的客户端连接
+func (l *MQTTv5) Close(closeClients CloseFunc) {
 	l.Lock()
 	defer l.Unlock()
 

@@ -11,18 +11,12 @@ import (
 
 // Config contains configuration values for a listener.
 type Config struct {
-	// Auth controller containing auth and ACL logic for
-	// allowing or denying access to the server and topics.
+	//授权
 	Auth auth.Controller
-
-	// TLS certficates and settings for the connection.
-	//
-	// Deprecated: Prefer exposing the tls.Config directly for greater flexibility.
-	// Please use TLSConfig instead.
+	// TLS
 	TLS *TLS
 
-	// TLSConfig is a tls.Config configuration to be used with the listener.
-	// See examples folder for basic and mutual-tls use.
+	// tls 配置
 	TLSConfig *tls.Config
 }
 
@@ -31,14 +25,14 @@ type Config struct {
 // Deprecated: Prefer exposing the tls.Config directly for greater flexibility.
 // Please use TLSConfig instead.
 type TLS struct {
-	Certificate []byte // the body of a public certificate.
-	PrivateKey  []byte // the body of a private key.
+	Certificate []byte // 公共证书
+	PrivateKey  []byte // 私钥
 }
 
 // EstablishFunc is a callback function for establishing new clients.
 type EstablishFunc func(id string, c net.Conn, ac auth.Controller) error
 
-// CloseFunc is a callback function for closing all listener clients.
+// 关闭服务器
 type CloseFunc func(id string)
 
 // Listener is an interface for network listeners. A network listener listens
@@ -97,7 +91,7 @@ func (l *Listeners) Delete(id string) {
 	l.Unlock()
 }
 
-// Serve starts a listener serving from the internal map.
+// 开始接收服务
 func (l *Listeners) Serve(id string, establisher EstablishFunc) {
 	l.RLock()
 	listener := l.internal[id]

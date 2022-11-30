@@ -14,20 +14,20 @@ const (
 	testPort = ":22222"
 )
 
-func TestNewTCP(t *testing.T) {
-	l := NewTCP("t1", testPort)
+func TestNewMQTTv5(t *testing.T) {
+	l := NewMQTTv5("t1", testPort)
 	require.Equal(t, "t1", l.id)
 	require.Equal(t, testPort, l.address)
 }
 
-func BenchmarkNewTCP(b *testing.B) {
+func BenchmarkNewMQTTv5(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		NewTCP("t1", testPort)
+		NewMQTTv5("t1", testPort)
 	}
 }
 
 func TestTCPSetConfig(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 
 	l.SetConfig(&Config{
 		Auth: new(auth.Allow),
@@ -44,37 +44,37 @@ func TestTCPSetConfig(t *testing.T) {
 }
 
 func BenchmarkTCPSetConfig(b *testing.B) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	for n := 0; n < b.N; n++ {
 		l.SetConfig(new(Config))
 	}
 }
 
 func TestTCPID(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	require.Equal(t, "t1", l.ID())
 }
 
 func BenchmarkTCPID(b *testing.B) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	for n := 0; n < b.N; n++ {
 		l.ID()
 	}
 }
 
 func TestTCPListen(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	err := l.Listen(nil)
 	require.NoError(t, err)
 
-	l2 := NewTCP("t2", testPort)
+	l2 := NewMQTTv5("t2", testPort)
 	err = l2.Listen(nil)
 	require.Error(t, err)
 	l.listen.Close()
 }
 
 func TestTCPListenTLSConfig(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	l.SetConfig(&Config{
 		Auth:      new(auth.Allow),
 		TLSConfig: tlsConfigBasic,
@@ -85,7 +85,7 @@ func TestTCPListenTLSConfig(t *testing.T) {
 }
 
 func TestTCPListenTLS(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	l.SetConfig(&Config{
 		Auth: new(auth.Allow),
 		TLS: &TLS{
@@ -99,7 +99,7 @@ func TestTCPListenTLS(t *testing.T) {
 }
 
 func TestTCPListenTLSInvalid(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	l.SetConfig(&Config{
 		Auth: new(auth.Allow),
 		TLS: &TLS{
@@ -112,7 +112,7 @@ func TestTCPListenTLSInvalid(t *testing.T) {
 }
 
 func TestTCPServeAndClose(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	err := l.Listen(nil)
 	require.NoError(t, err)
 
@@ -131,7 +131,7 @@ func TestTCPServeAndClose(t *testing.T) {
 }
 
 func TestTCPServeTLSAndClose(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	l.SetConfig(&Config{
 		Auth: new(auth.Allow),
 		TLS: &TLS{
@@ -157,7 +157,7 @@ func TestTCPServeTLSAndClose(t *testing.T) {
 }
 
 func TestTCPCloseError(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	err := l.Listen(nil)
 	require.NoError(t, err)
 	o := make(chan bool)
@@ -173,7 +173,7 @@ func TestTCPCloseError(t *testing.T) {
 }
 
 func TestTCPServeEnd(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	err := l.Listen(nil)
 	require.NoError(t, err)
 
@@ -184,7 +184,7 @@ func TestTCPServeEnd(t *testing.T) {
 }
 
 func TestTCPEstablishThenError(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	err := l.Listen(nil)
 	require.NoError(t, err)
 
@@ -206,7 +206,7 @@ func TestTCPEstablishThenError(t *testing.T) {
 }
 
 func TestTCPEstablishButEnding(t *testing.T) {
-	l := NewTCP("t1", testPort)
+	l := NewMQTTv5("t1", testPort)
 	err := l.Listen(nil)
 	require.NoError(t, err)
 	l.end = 1

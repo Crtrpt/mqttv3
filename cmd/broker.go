@@ -42,12 +42,12 @@ func main() {
 
 	for _, broker := range config.Broker {
 		if broker.Protocol == "tcp" {
-			tcp := listeners.NewTCP(broker.Name, broker.Addr)
+			tcp := listeners.NewMQTTv5(broker.Name, broker.Addr)
 			err := server.AddListener(tcp, nil)
 			if err != nil {
 				mqtt.Logger.Sugar().Errorf("%v", err)
 			} else {
-				mqtt.Logger.Sugar().Infof("监听 tcp %v", broker.Addr)
+				mqtt.Logger.Sugar().Infof("监听 tcp mqttv5 %v", broker.Addr)
 			}
 		}
 		if broker.Protocol == "websocket" {
