@@ -38,6 +38,10 @@ const (
 	Pingresp // 13
 	//DISCONNECT 14 Client —> Server 客户端断开连接请求
 	Disconnect // 14
+	//Auth
+	Token //15
+
+	Will_Prop byte = 0xff
 
 	Accepted                      byte = 0x00
 	Failed                        byte = 0xFF
@@ -57,9 +61,11 @@ var (
 	ErrMalformedProtocolVersion = errors.New("malformed packet: protocol version")
 	ErrMalformedFlags           = errors.New("malformed packet: flags")
 	ErrMalformedKeepalive       = errors.New("malformed packet: keepalive")
+	ErrMalformedProperties      = errors.New("malformed packet: properties")
 	ErrMalformedClientID        = errors.New("malformed packet: client id")
 	ErrMalformedWillTopic       = errors.New("malformed packet: will topic")
 	ErrMalformedWillMessage     = errors.New("malformed packet: will message")
+	ErrMalformedWillProperties  = errors.New("malformed packet: will properties")
 	ErrMalformedUsername        = errors.New("malformed packet: username")
 	ErrMalformedPassword        = errors.New("malformed packet: password")
 
@@ -92,6 +98,8 @@ var (
 // types, which allows us to take advantage of various compiler optimizations.
 type Packet struct {
 	FixedHeader      FixedHeader
+	Properties       Properties
+	WillProperties   Properties
 	AllowClients     []string // For use with OnMessage event hook.
 	Topics           []string
 	ReturnCodes      []byte
@@ -169,11 +177,15 @@ func (pk *Packet) ConnectEncode(buf *bytes.Buffer) error {
 
 // ConnectDecode decodes a connect packet.
 func (pk *Packet) ConnectDecode(buf []byte) error {
+	// fmt.Printf("DEBUG %v <<<\r\n", "ConnectDecode")
+	// fmt.Printf("%v", hex.Dump(buf))
 	var offset int
 	var err error
 
 	// Unpack protocol name and version.
 	pk.ProtocolName, offset, err = decodeBytes(buf, 0)
+	// fmt.Printf("%v", pk.ProtocolName)
+
 	if err != nil {
 		return fmt.Errorf("%s: %w", err, ErrMalformedProtocolName)
 	}
@@ -182,6 +194,7 @@ func (pk *Packet) ConnectDecode(buf []byte) error {
 	if err != nil {
 		return fmt.Errorf("%s: %w", err, ErrMalformedProtocolVersion)
 	}
+
 	// Unpack flags byte.
 	flags, offset, err := decodeByte(buf, offset)
 	if err != nil {
@@ -201,6 +214,13 @@ func (pk *Packet) ConnectDecode(buf []byte) error {
 		return fmt.Errorf("%s: %w", err, ErrMalformedKeepalive)
 	}
 
+	//解析用户属性
+	offset, err = pk.Properties.Decode(Connect, buf, offset)
+
+	if err != nil {
+		return fmt.Errorf("解析用户属性异常 %s: %w", err, ErrMalformedProperties)
+	}
+
 	// Get client ID.
 	pk.ClientIdentifier, offset, err = decodeString(buf, offset)
 	if err != nil {
@@ -209,6 +229,10 @@ func (pk *Packet) ConnectDecode(buf []byte) error {
 
 	// Get Last Will and Testament topic and message if applicable.
 	if pk.WillFlag {
+		offset, err = pk.WillProperties.Decode(Will_Prop, buf, offset)
+		if err != nil {
+			return fmt.Errorf("%s: %w", err, ErrMalformedWillProperties)
+		}
 		pk.WillTopic, offset, err = decodeString(buf, offset)
 		if err != nil {
 			return fmt.Errorf("%s: %w", err, ErrMalformedWillTopic)
@@ -243,14 +267,14 @@ func (pk *Packet) ConnectDecode(buf []byte) error {
 func (pk *Packet) ConnectValidate() (b byte, err error) {
 
 	// End if protocol name is bad.
-	if bytes.Compare(pk.ProtocolName, []byte{'M', 'Q', 'I', 's', 'd', 'p'}) != 0 &&
-		bytes.Compare(pk.ProtocolName, []byte{'M', 'Q', 'T', 'T'}) != 0 {
+	if bytes.Compare(pk.ProtocolName, []byte{'M', 'Q', 'T', 'T'}) != 0 {
+		fmt.Printf("协议验证失败")
 		return CodeConnectProtocolViolation, ErrProtocolViolation
 	}
 
 	// End if protocol version is bad.
-	if (bytes.Compare(pk.ProtocolName, []byte{'M', 'Q', 'I', 's', 'd', 'p'}) == 0 && pk.ProtocolVersion != 3) ||
-		(bytes.Compare(pk.ProtocolName, []byte{'M', 'Q', 'T', 'T'}) == 0 && pk.ProtocolVersion != 4) {
+	if bytes.Compare(pk.ProtocolName, []byte{'M', 'Q', 'T', 'T'}) == 0 && pk.ProtocolVersion != 5 {
+		fmt.Printf("协议验证 和版本验证失败")
 		return CodeConnectBadProtocolVersion, ErrProtocolViolation
 	}
 
@@ -284,10 +308,13 @@ func (pk *Packet) ConnectValidate() (b byte, err error) {
 
 // ConnackEncode encodes a Connack packet.
 func (pk *Packet) ConnackEncode(buf *bytes.Buffer) error {
-	pk.FixedHeader.Remaining = 2
+	fmt.Printf("ack encode ??? TODO:// 先对 prop 进行然后计算数量")
+	prop, l, _ := pk.Properties.Encode(Connack, buf)
+	pk.FixedHeader.Remaining = 2 + l
 	pk.FixedHeader.Encode(buf)
 	buf.WriteByte(encodeBool(pk.SessionPresent))
 	buf.WriteByte(pk.ReturnCode)
+	buf.Write(prop)
 	return nil
 }
 

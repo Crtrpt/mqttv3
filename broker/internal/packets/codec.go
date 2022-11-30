@@ -12,6 +12,16 @@ func bytesToString(bs []byte) string {
 	return *(*string)(unsafe.Pointer(&bs))
 }
 
+// decodeUint32 extracts the value of four bytes from a byte array.
+func decodeUint32(buf []byte, offset int) (uint32, int, error) {
+	if len(buf) < offset+4 {
+		return 0, 0, ErrOffsetUintOutOfRange
+	}
+
+	return binary.BigEndian.Uint32(buf[offset : offset+4]), offset + 4, nil
+	// return binary.BigEndian.Uint32(buf[offset : offset+4]), offset + 4, nil
+}
+
 // decodeUint16 extracts the value of two bytes from a byte array.
 func decodeUint16(buf []byte, offset int) (uint16, int, error) {
 	if len(buf) < offset+2 {
@@ -19,6 +29,14 @@ func decodeUint16(buf []byte, offset int) (uint16, int, error) {
 	}
 
 	return binary.BigEndian.Uint16(buf[offset : offset+2]), offset + 2, nil
+}
+
+// decodeUint8 extracts the value of two bytes from a byte array.
+func decodeUint8(buf []byte, offset int) (uint8, int, error) {
+	if len(buf) < offset+1 {
+		return 0, 0, ErrOffsetUintOutOfRange
+	}
+	return buf[offset : offset+1][0], offset + 1, nil
 }
 
 // decodeString extracts a string from a byte array, beginning at an offset.
@@ -83,6 +101,13 @@ func encodeBytes(val []byte) []byte {
 	buf := make([]byte, 2, 32)
 	binary.BigEndian.PutUint16(buf, uint16(len(val)))
 	return append(buf, val...)
+}
+
+// encodeUint32 encodes a uint16 value to a byte array.
+func encodeUint32(val uint32) []byte {
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, val)
+	return buf
 }
 
 // encodeUint16 encodes a uint16 value to a byte array.
