@@ -23,10 +23,11 @@ import (
 )
 
 const (
-	// Version indicates the current server version.
+	// 当前服务器的版本
 	Version = "1.1.1"
 
 	// defaultInflightTTL is the number of seconds a pending inflight message should last.
+	// 默认飞行时间  如果一条消息还没有到达那么 就删除掉
 	defaultInflightTTL int64 = 60 * 60 * 24
 )
 
@@ -96,7 +97,7 @@ type Options struct {
 	// BufferBlockSize overrides the default buffer block size (DefaultBlockSize) for the client buffers.
 	BufferBlockSize int
 
-	// InflightTTL specifies the duration that a queued inflight message should exist before being purged.
+	// 消息飞行时间
 	InflightTTL int64
 }
 
@@ -104,13 +105,6 @@ type Options struct {
 type inlineMessages struct {
 	done chan bool           // indicate that the server is ending.
 	pub  chan packets.Packet // a channel of packets to publish to clients
-}
-
-// New returns a new instance of MQTT server with no options.
-// This method has been deprecated and will be removed in a future release.
-// Please use NewServer instead.
-func New() *Server {
-	return NewServer(nil)
 }
 
 // NewServer returns a new instance of an MQTT broker with optional values where applicable.
@@ -124,22 +118,32 @@ func NewServer(opts *Options) *Server {
 	}
 
 	s := &Server{
-		done:     make(chan bool),
+		done: make(chan bool),
+		//字节池
 		bytepool: circ.NewBytesPool(opts.BufferSize),
-		Clients:  clients.New(),
-		Topics:   topics.New(),
+		//client列表
+		Clients: clients.New(),
+		//topic树
+		Topics: topics.New(),
+		//服务器信息
 		System: &system.Info{
 			Version: Version,
 			Started: time.Now().Unix(),
 		},
-		sysTicker:            time.NewTicker(SysTopicInterval * time.Millisecond),
+		//定时发送服务器信息
+		sysTicker: time.NewTicker(SysTopicInterval * time.Millisecond),
+		//定时清楚过期消息
 		inflightExpiryTicker: time.NewTicker(time.Duration(opts.InflightTTL) * time.Second),
+		//10纳秒跑一次重发队列
 		inflightResendTicker: time.NewTicker(time.Duration(10) * time.Second),
+		//内联消息
 		inline: inlineMessages{
 			done: make(chan bool),
 			pub:  make(chan packets.Packet, 4096),
 		},
-		Events:  events.Events{},
+		//事件列表
+		Events: events.Events{},
+		//参数
 		Options: opts,
 	}
 
@@ -216,6 +220,7 @@ func (s *Server) eventLoop() {
 		//删除过期消息
 		case <-s.inflightExpiryTicker.C:
 			s.clearExpiredInflights(time.Now().Unix())
+		//重发消息
 		case <-s.inflightResendTicker.C:
 			s.resendPendingInflights()
 		}
@@ -1123,12 +1128,14 @@ func (s *Server) loadRetained(v []persistence.Message) {
 func (s *Server) clearExpiredInflights(dt int64) {
 	expiry := dt - s.Options.InflightTTL
 
+	//便利全部客户端删除过期消息
 	for _, client := range s.Clients.GetAll() {
 		deleted := client.Inflight.ClearExpired(expiry)
 		atomic.AddInt64(&s.System.Inflight, deleted*-1)
 	}
 
 	if s.Store != nil {
+		//删除过期消息
 		s.Store.ClearExpiredInflight(expiry)
 	}
 }

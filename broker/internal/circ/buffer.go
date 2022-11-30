@@ -8,34 +8,34 @@ import (
 )
 
 var (
-	// DefaultBufferSize is the default size of the buffer in bytes.
+	// 默认缓存大小
 	DefaultBufferSize int = 1024 * 256
 
 	// DefaultBlockSize is the default size per R/W block in bytes.
 	DefaultBlockSize int = 1024 * 8
 
 	// ErrOutOfRange indicates that the index was out of range.
-	ErrOutOfRange = errors.New("Indexes out of range")
+	ErrOutOfRange = errors.New("访问越界")
 
 	// ErrInsufficientBytes indicates that there were not enough bytes to return.
-	ErrInsufficientBytes = errors.New("Insufficient bytes to return")
+	ErrInsufficientBytes = errors.New("返回字节不粗")
 )
 
-// Buffer is a circular buffer for reading and writing messages.
+// 环形缓冲区
 type Buffer struct {
-	buf   []byte       // the bytes buffer.
-	tmp   []byte       // a temporary buffer.
-	Mu    sync.RWMutex // the buffer needs its own mutex to work properly.
-	ID    string       // the identifier of the buffer. This is used in debug output.
+	buf   []byte       // 字节缓存
+	tmp   []byte       // 临时缓存.
+	Mu    sync.RWMutex // 互斥锁.
+	ID    string       // 唯一标识.
 	head  int64        // the current position in the sequence - a forever increasing index.
 	tail  int64        // the committed position in the sequence - a forever increasing index.
-	rcond *sync.Cond   // the sync condition for the buffer reader.
-	wcond *sync.Cond   // the sync condition for the buffer writer.
-	size  int          // the size of the buffer.
+	rcond *sync.Cond   // 读取同步条件.
+	wcond *sync.Cond   // 写入同步条件.
+	size  int          // 缓冲区大小.
 	mask  int          // a bitmask of the buffer size (size-1).
 	block int          // the size of the R/W block.
-	done  uint32       // indicates that the buffer is closed.
-	State uint32       // indicates whether the buffer is reading from (1) or writing to (2).
+	done  uint32       // 判断缓冲区是否关闭.
+	State uint32       // 判断是读还是写 indicates whether the buffer is reading from (1) or writing to (2).
 }
 
 // NewBuffer returns a new instance of buffer. You should call NewReader or

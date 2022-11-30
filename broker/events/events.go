@@ -4,21 +4,21 @@ import (
 	"github.com/crtrpt/mqtt/broker/internal/packets"
 )
 
-// Events provides callback handlers for different event hooks.
+// 订阅消息回调接口
 type Events struct {
-	OnProcessMessage // published message receieved before evaluation.
-	OnMessage        // published message receieved.
-	OnError          // server error.
-	OnConnect        // client connected.
-	OnDisconnect     // client disconnected.
-	OnSubscribe      // topic subscription created.
-	OnUnsubscribe    // topic subscription removed.
+	OnProcessMessage // 消息发布之前
+	OnMessage        // 收到已发布的消息.
+	OnError          // 服务器异常.
+	OnConnect        // 客户端已连接
+	OnDisconnect     // 客户端断开连接.
+	OnSubscribe      // 订阅主题.
+	OnUnsubscribe    // 取消订阅主题
 }
 
-// Packets is an alias for packets.Packet.
+// 包别名
 type Packet packets.Packet
 
-// Client contains limited information about a connected client.
+// 已连接的客户端的信息
 type Client struct {
 	ID           string
 	Remote       string
@@ -46,6 +46,7 @@ type Clientlike interface {
 // have the function open a new goroutine on the embedding side.
 // The `mqtt.ErrRejectPacket` error can be returned to reject and abandon any further
 // processing of the packet.
+// 发布消息到达broker的时候触发
 type OnProcessMessage func(Client, Packet) (Packet, error)
 
 // OnMessage function is called when a publish message is received. Note,
@@ -59,20 +60,17 @@ type OnProcessMessage func(Client, Packet) (Packet, error)
 // have the function open a new goroutine on the embedding side.
 type OnMessage func(Client, Packet) (Packet, error)
 
-// OnConnect is called when a client successfully connects to the broker.
+// 连接的时候回调
 type OnConnect func(Client, Packet)
 
-// OnDisconnect is called when a client disconnects to the broker. An error value
-// is passed to the function if the client disconnected abnormally, otherwise it
-// will be nil on a normal disconnect.
+// 断开连接的时候回调
 type OnDisconnect func(Client, error)
 
-// OnError is called when errors that will not be passed to
-// OnDisconnect are handled by the server.
+// 发生错误的时候回调
 type OnError func(Client, error)
 
-// OnSubscribe is called when a new subscription filter for a client is created.
+// 订阅的时候回调
 type OnSubscribe func(filter string, cl Client, qos byte)
 
-// OnUnsubscribe is called when an existing subscription filter for a client is removed.
+// 取消订阅的时候回调
 type OnUnsubscribe func(filter string, cl Client)

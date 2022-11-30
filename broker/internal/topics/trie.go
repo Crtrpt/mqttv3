@@ -10,6 +10,7 @@ import (
 // Subscriptions is a map of subscriptions keyed on client.
 type Subscriptions map[string]byte
 
+// 前缀树算法
 // Index is a prefix/trie tree containing topic subscribers and retained messages.
 type Index struct {
 	mu   sync.RWMutex // a mutex for locking the whole index.

@@ -457,7 +457,7 @@ func (cl *Client) ReadPacket(fh *packets.FixedHeader) (pk packets.Packet, err er
 	return
 }
 
-// WritePacket encodes and writes a packet to the client.
+// 组包发给客户端
 func (cl *Client) WritePacket(pk packets.Packet) (n int, err error) {
 	if atomic.LoadUint32(&cl.State.Done) == 1 {
 		return 0, ErrConnectionClosed
@@ -520,20 +520,20 @@ func (cl *Client) WritePacket(pk packets.Packet) (n int, err error) {
 	return
 }
 
-// LWT contains the last will and testament details for a client connection.
+// 遗言
 type LWT struct {
-	Message []byte // the message that shall be sent when the client disconnects.
-	Topic   string // the topic the will message shall be sent to.
-	Qos     byte   // the quality of service desired.
-	Retain  bool   // indicates whether the will message should be retained
+	Message []byte // 消息
+	Topic   string // 主题
+	Qos     byte   // 发送质量
+	Retain  bool   // 是否保留
 }
 
 // InflightMessage contains data about a packet which is currently in-flight.
 type InflightMessage struct {
-	Packet  packets.Packet // the packet currently in-flight.
-	Sent    int64          // the last time the message was sent (for retries) in unixtime.
-	Created int64          // the unix timestamp when the inflight message was created.
-	Resends int            // the number of times the message was attempted to be sent.
+	Packet  packets.Packet // 正在处理的消息.
+	Sent    int64          // 上次重发时间.
+	Created int64          // 消息创建时间
+	Resends int            // 消息被重新发送了多少次.
 }
 
 // Inflight is a map of InflightMessage keyed on packet id.
@@ -560,7 +560,7 @@ func (i *Inflight) Get(key uint16) (InflightMessage, bool) {
 	return val, ok
 }
 
-// Len returns the size of the in-flight messages map.
+// 消息队列长度
 func (i *Inflight) Len() int {
 	i.RLock()
 	v := len(i.internal)
@@ -568,7 +568,7 @@ func (i *Inflight) Len() int {
 	return v
 }
 
-// GetAll returns all the in-flight messages.
+// 获取全部正确处理的消息
 func (i *Inflight) GetAll() map[uint16]InflightMessage {
 	m := map[uint16]InflightMessage{}
 	i.RLock()
@@ -580,8 +580,7 @@ func (i *Inflight) GetAll() map[uint16]InflightMessage {
 	return m
 }
 
-// Delete removes an in-flight message from the map. Returns true if the
-// message existed.
+// 删除指定消息
 func (i *Inflight) Delete(key uint16) bool {
 	i.Lock()
 	defer i.Unlock()
@@ -591,8 +590,7 @@ func (i *Inflight) Delete(key uint16) bool {
 	return ok
 }
 
-// ClearExpired deletes any inflight messages that have remained longer than
-// the servers InflightTTL duration. Returns number of deleted inflights.
+// 删除过期消息
 func (i *Inflight) ClearExpired(expiry int64) int64 {
 	i.Lock()
 	defer i.Unlock()
