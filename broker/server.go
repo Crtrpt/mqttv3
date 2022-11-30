@@ -107,7 +107,12 @@ type inlineMessages struct {
 	pub  chan packets.Packet // a channel of packets to publish to clients
 }
 
-// NewServer returns a new instance of an MQTT broker with optional values where applicable.
+// 仅限测试用
+func New() *Server {
+	return NewServer(nil)
+}
+
+// 返回一个server实例
 func NewServer(opts *Options) *Server {
 	if opts == nil {
 		opts = new(Options)
